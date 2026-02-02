@@ -1,0 +1,471 @@
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>P1 Fault Reporting → WhatsApp Text Generator</title>
+  <style>
+    :root { --gap: 12px; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #f6f7f9; color: #111; }
+    .wrap { max-width: 1040px; margin: 24px auto; padding: 0 16px 40px; }
+    header { margin-bottom: 14px; }
+    h1 { font-size: 20px; margin: 0 0 6px; }
+    .sub { opacity: .8; font-size: 13px; margin: 0; }
+
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+    form, .preview {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    fieldset { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; margin: 0 0 14px; }
+    legend { padding: 0 8px; font-weight: 700; font-size: 14px; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--gap); }
+    .col-12 { grid-column: span 12; }
+    .col-8  { grid-column: span 8; }
+    .col-6  { grid-column: span 6; }
+    .col-4  { grid-column: span 4; }
+    .col-3  { grid-column: span 3; }
+    @media (max-width: 860px) { .col-8,.col-6,.col-4,.col-3 { grid-column: span 12; } }
+
+    label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+    input, select, textarea {
+      width: 100%; box-sizing: border-box;
+      border: 1px solid #d1d5db; border-radius: 10px;
+      padding: 10px 12px; font-size: 14px; background: #fff;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    .hint { font-size: 12px; opacity: .75; margin-top: 6px; }
+    .req { color: #b91c1c; font-weight: 900; margin-left: 4px; }
+
+    .btnbar { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .btn {
+      border: 1px solid #d1d5db; background: #111; color: #fff;
+      border-radius: 10px; padding: 10px 12px; font-size: 14px; cursor: pointer;
+    }
+    .btn.secondary { background: #fff; color: #111; }
+    .btn.danger { background: #b91c1c; border-color: #b91c1c; }
+
+    .failure-card {
+      border: 1px dashed #d1d5db; border-radius: 12px; padding: 12px; margin-top: 10px; background: #fafafa;
+    }
+    .failure-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; }
+    pre, textarea.mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .preview h2 { margin: 0 0 10px; font-size: 14px; }
+    .preview .box {
+      border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: #fbfbfb;
+      min-height: 320px;
+    }
+    .small { font-size: 12px; opacity: .75; margin-top: 8px; }
+    .ok { color: #047857; }
+  </style>
+
+  <meta name="theme-color" content="#111111" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="P1 Fault" />
+
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>P1 Fault reporting → WhatsApp Text Generator</h1>
+      <p class="sub">Fill the form, add Route/Failure entries, then copy the generated WhatsApp message.</p>
+    </header>
+
+    <div class="layout">
+      <!-- FORM -->
+      <form id="p1Form" autocomplete="off">
+        <fieldset>
+          <legend>Fault fields</legend>
+          <div class="grid">
+            <div class="col-12">
+              <label for="faultSummary">Fault Summary <span class="req">*</span></label>
+              <textarea id="faultSummary" name="faultSummary" required
+                placeholder="(P1/I4) ESCALATION ... Incident Ref: ... (Owner)"></textarea>
+            </div>
+
+            <div class="col-6">
+              <label for="failureTime">Failure time <span class="req">*</span></label>
+              <input id="failureTime" name="failureTime" type="datetime-local" required />
+            </div>
+
+            <div class="col-6">
+              <label for="clearTime">Failure Clear time (Date & time)</label>
+              <input id="clearTime" name="clearTime" type="datetime-local" />
+            </div>
+
+            <div class="col-12">
+              <label for="rootCauseSummary">Root cause summary</label>
+              <textarea id="rootCauseSummary" name="rootCauseSummary" placeholder="Short overall summary..."></textarea>
+            </div>
+
+            <div class="col-8">
+              <label for="impactedRings">Impacted ring(s)</label>
+              <input id="impactedRings" name="impactedRings" type="text" placeholder="e.g., Kruger Gate Ring 2" />
+            </div>
+
+            <div class="col-4">
+              <label for="sitesImpacted">No. of sites impacted in ring</label>
+              <input id="sitesImpacted" name="sitesImpacted" type="number" min="0" step="1" placeholder="e.g., 23" />
+            </div>
+
+            <div class="col-12">
+              <label for="faultStatus">Fault status</label>
+              <textarea id="faultStatus" name="faultStatus"
+                placeholder="e.g., Cleared after Huawei reset the Circuit breaker at ..."></textarea>
+            </div>
+
+            <div class="col-12">
+              <label for="rerouting">Re-routing possibility</label>
+              <input id="rerouting" name="rerouting" type="text" placeholder="e.g., N/A / Yes / No (plus notes)" />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Route / Failure entries (addable)</legend>
+          <div class="hint">
+            Add entries like <b>Route 1 Failure 1</b>, <b>Route 2 Failure 1</b>, etc.
+            Each entry generates:
+            <br/>*Route X Failure Y* + Link/site + Failure timestamp + Root cause
+          </div>
+
+          <div class="btnbar">
+            <button type="button" class="btn secondary" id="addEntryBtn">+ Add Route Failure</button>
+            <button type="button" class="btn secondary" id="fillExampleBtn">Fill Example</button>
+            <button type="reset" class="btn secondary" id="resetBtn">Reset</button>
+          </div>
+
+          <div id="entries"></div>
+        </fieldset>
+
+        <div class="btnbar">
+          <button type="button" class="btn" id="generateBtn">Generate WhatsApp Text</button>
+          <button type="button" class="btn secondary" id="copyBtn">Copy</button>
+        </div>
+
+        <div class="small" id="copyStatus"></div>
+      </form>
+
+      <!-- PREVIEW -->
+      <section class="preview">
+        <h2>Generated WhatsApp Text</h2>
+        <div class="box">
+          <pre id="output"></pre>
+        </div>
+        <div class="small">
+          Tip: WhatsApp respects <b>*bold*</b> and line breaks. The “====” underline is plain text for visual structure.
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Helpers ----------
+    const $ = (id) => document.getElementById(id);
+
+    function pad(n) { return String(n).padStart(2, "0"); }
+
+    function formatDT(value, includeSeconds = true) {
+      // value from datetime-local: "YYYY-MM-DDTHH:mm" (seconds optional)
+      if (!value) return "";
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return value;
+      const sec = includeSeconds ? `:${pad(d.getSeconds())}` : "";
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}${sec}`;
+    }
+
+    function safeLine(label, value, prefixStar = true) {
+      // If value is empty, still print label (as per your pattern) OR skip (choose behaviour here)
+      // We'll follow your pattern: always print the label line, even if blank.
+      const star = prefixStar ? "*" : "";
+      return `${star}${label}${star} ${value || ""}`.trimEnd();
+    }
+
+    function ensureMinOneEntry() {
+      if ($("entries").children.length === 0) addEntry();
+    }
+
+    // ---------- Dynamic entries (Route # Failure #) ----------
+    const entriesWrap = $("entries");
+    const addEntryBtn = $("addEntryBtn");
+    let entryId = 0;
+
+    function entryCardTemplate(id) {
+      return `
+        <div class="failure-card" data-entry="${id}">
+          <div class="failure-head">
+            <div>
+              <span class="pill">Entry #${id}</span>
+              <span class="hint" style="margin-left:8px;">Generates: <b>*Route X Failure Y*</b> block</span>
+            </div>
+            <button type="button" class="btn danger" data-remove="${id}">Remove</button>
+          </div>
+
+          <div class="grid" style="margin-top:10px;">
+            <div class="col-3">
+              <label>Route # <span class="req">*</span></label>
+              <input name="route_${id}" type="number" min="1" step="1" required placeholder="e.g., 1" />
+            </div>
+
+            <div class="col-3">
+              <label>Failure # <span class="req">*</span></label>
+              <input name="failure_${id}" type="number" min="1" step="1" required placeholder="e.g., 1" />
+            </div>
+
+            <div class="col-6">
+              <label>Link/site description <span class="req">*</span></label>
+              <input name="site_${id}" type="text" required placeholder="e.g., MPU_Arthur_Stone_PTN_M8C-1" />
+            </div>
+
+            <div class="col-6">
+              <label>Failure timestamp <span class="req">*</span></label>
+              <input name="ts_${id}" type="datetime-local" required />
+            </div>
+
+            <div class="col-6">
+              <label>Root cause <span class="req">*</span></label>
+              <input name="cause_${id}" type="text" required placeholder="e.g., Tripped Circuit Breaker" />
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function addEntry(prefill = null) {
+      entryId += 1;
+      entriesWrap.insertAdjacentHTML("beforeend", entryCardTemplate(entryId));
+
+      const removeBtn = entriesWrap.querySelector(`[data-remove="${entryId}"]`);
+      removeBtn.addEventListener("click", (e) => {
+        const id = e.currentTarget.getAttribute("data-remove");
+        const block = entriesWrap.querySelector(`[data-entry="${id}"]`);
+        if (block) block.remove();
+        ensureMinOneEntry();
+      });
+
+      if (prefill) {
+        const block = entriesWrap.querySelector(`[data-entry="${entryId}"]`);
+        block.querySelector(`[name="route_${entryId}"]`).value = prefill.route ?? "";
+        block.querySelector(`[name="failure_${entryId}"]`).value = prefill.failure ?? "";
+        block.querySelector(`[name="site_${entryId}"]`).value = prefill.site ?? "";
+        block.querySelector(`[name="ts_${entryId}"]`).value = prefill.ts ?? "";
+        block.querySelector(`[name="cause_${entryId}"]`).value = prefill.cause ?? "";
+      }
+    }
+
+    addEntryBtn.addEventListener("click", () => addEntry());
+
+    // ---------- Generator ----------
+    function generateWhatsAppText() {
+      // Validate required top fields + entries
+      const form = $("p1Form");
+      if (!form.reportValidity()) return "";
+
+      // Additional validation: clear time not earlier than failure time
+      const ft = new Date($("failureTime").value);
+      const ctVal = $("clearTime").value;
+      if (ctVal) {
+        const ct = new Date(ctVal);
+        if (!isNaN(ft.getTime()) && !isNaN(ct.getTime()) && ct < ft) {
+          alert("Failure Clear time cannot be earlier than Failure time.");
+          $("clearTime").focus();
+          return "";
+        }
+      }
+
+      // Collect entries
+      const cards = entriesWrap.querySelectorAll(".failure-card");
+      const entries = [];
+      cards.forEach(card => {
+        const id = card.getAttribute("data-entry");
+        const route = card.querySelector(`[name="route_${id}"]`).value;
+        const failure = card.querySelector(`[name="failure_${id}"]`).value;
+        const site = card.querySelector(`[name="site_${id}"]`).value.trim();
+        const ts = card.querySelector(`[name="ts_${id}"]`).value;
+        const cause = card.querySelector(`[name="cause_${id}"]`).value.trim();
+
+        entries.push({
+          route: Number(route),
+          failure: Number(failure),
+          site,
+          ts,
+          cause
+        });
+      });
+
+      // Sort entries for nice output (Route asc, Failure asc)
+      entries.sort((a,b) => (a.route - b.route) || (a.failure - b.failure));
+
+      // Build text exactly in your pattern
+      const lines = [];
+      lines.push("P1 Fault reporting");
+      lines.push("==========================");
+      lines.push("");
+      lines.push("*Fault Summary*");
+      lines.push("");
+      lines.push(($("faultSummary").value || "").trim());
+      lines.push("");
+      lines.push(safeLine("Failure time:", formatDT($("failureTime").value, true), true));
+      lines.push("");
+      lines.push(safeLine("Root cause summary:", ($("rootCauseSummary").value || "").trim(), true));
+      lines.push("");
+      lines.push(safeLine("Impacted ring(s):", ($("impactedRings").value || "").trim(), true));
+      lines.push(safeLine("No. of sites impacted in ring:", ($("sitesImpacted").value || "").trim(), true));
+      lines.push("");
+
+      // Route/Failure blocks
+      entries.forEach(e => {
+        lines.push(`*Route ${e.route} Failure ${e.failure}*`);
+        lines.push(`*Link/site description:* ${e.site}`);
+        lines.push(`*Failure timestamp:* ${formatDT(e.ts, true)}`);
+        lines.push(`*Root cause:* ${e.cause}`);
+        lines.push("");
+        lines.push("");
+      });
+
+      lines.push(safeLine("Fault status:", ($("faultStatus").value || "").trim(), true));
+      lines.push(safeLine("Re-routing possibility:", ($("rerouting").value || "").trim(), true));
+
+      const clear = $("clearTime").value;
+      if (clear) {
+        lines.push("");
+        lines.push(safeLine("Failure Clear time:", formatDT(clear, true), true));
+      }
+
+      // Trim trailing blank lines
+      while (lines.length && lines[lines.length - 1] === "") lines.pop();
+
+      return lines.join("\n");
+    }
+
+    $("generateBtn").addEventListener("click", () => {
+      const text = generateWhatsAppText();
+      if (!text) return;
+      $("output").textContent = text;
+      $("copyStatus").textContent = "";
+    });
+
+    // ---------- Copy ----------
+    $("copyBtn").addEventListener("click", async () => {
+      const text = $("output").textContent || "";
+      if (!text.trim()) {
+        $("copyStatus").textContent = "Generate the text first.";
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        $("copyStatus").innerHTML = "<span class='ok'>Copied to clipboard ✅</span>";
+      } catch (e) {
+        $("copyStatus").textContent = "Copy failed (browser blocked). Select the text and copy manually.";
+      }
+    });
+
+    // ---------- Example fill ----------
+    $("fillExampleBtn").addEventListener("click", () => {
+      $("faultSummary").value =
+        "(P1/I4) ESCALATION MPU ACCESS: 23 BTSs failed on HZ01/02/03/06 BSCs as well as 23 NodeBs on NS06 RNC and 23 LTEs. Boiler to be initiated. (Estimated Subscriber Impact is 3832 Voice and 198 Data, Locations: 23) Incident Ref: MPU 08:45, Run time: 0d0h22m. (Kgabo : ASOC)";
+      $("failureTime").value = "2026-01-11T08:45";
+      $("rootCauseSummary").value = "";
+      $("impactedRings").value = "Kruger Gate Ring 2";
+      $("sitesImpacted").value = 23;
+      $("faultStatus").value = "Cleared after Huawei reset the Circuit breaker at MPU_Nyongane_PTN_M8C-1";
+      $("rerouting").value = "N/A";
+
+      // Clear time optional; add if you want it
+      $("clearTime").value = "";
+
+      // Reset entries then add the 2 example blocks
+      entriesWrap.innerHTML = "";
+      entryId = 0;
+
+      addEntry({
+        route: 1,
+        failure: 1,
+        site: "MPU_Arthur_Stone_PTN_M8C-1",
+        ts: "2026-01-11T02:10",
+        cause: "Failed because of Power. Huawei ETA is 10:00"
+      });
+
+      addEntry({
+        route: 2,
+        failure: 1,
+        site: "MPU_Nyongane_PTN_M8C-1",
+        ts: "2026-01-11T08:45",
+        cause: "Tripped Circuit Breaker"
+      });
+
+      // Generate immediately
+      $("output").textContent = generateWhatsAppText();
+    });
+
+    // ---------- Reset ----------
+    $("resetBtn").addEventListener("click", () => {
+      entriesWrap.innerHTML = "";
+      entryId = 0;
+      $("output").textContent = "";
+      $("copyStatus").textContent = "";
+      ensureMinOneEntry();
+    });
+
+    // Start with one empty entry by default
+    addEntry();
+  
+    // ---------- PWA: service worker ----------
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+
+    // ---------- Share (iOS / WhatsApp friendly) ----------
+    // Adds a quick share option using the Web Share API if available.
+    const shareBtn = document.createElement("button");
+    shareBtn.type = "button";
+    shareBtn.className = "btn secondary";
+    shareBtn.id = "shareBtn";
+    shareBtn.textContent = "Share";
+    const btnbar = document.querySelector("#p1Form .btnbar"); // last btnbar near Generate/Copy
+    if (btnbar) btnbar.appendChild(shareBtn);
+
+    shareBtn.addEventListener("click", async () => {
+      const text = $("output").textContent || "";
+      if (!text.trim()) {
+        $("copyStatus").textContent = "Generate the text first.";
+        return;
+      }
+      // Prefer native share sheet (works great on iPhone)
+      if (navigator.share) {
+        try {
+          await navigator.share({ text });
+          $("copyStatus").innerHTML = "<span class='ok'>Shared ✅</span>";
+          return;
+        } catch (e) {
+          // user cancelled or not allowed; fall back below
+        }
+      }
+      // Fallback: copy
+      try {
+        await navigator.clipboard.writeText(text);
+        $("copyStatus").innerHTML = "<span class='ok'>Copied to clipboard ✅</span>";
+      } catch (e) {
+        $("copyStatus").textContent = "Share not available; copy manually.";
+      }
+    });
+
+  </script>
+</body>
+</html>
+```
